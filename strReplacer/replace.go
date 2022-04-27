@@ -8,7 +8,7 @@ import (
 )
 
 // 替换配置
-type replace struct {
+type Replace struct {
 	matchStart  string                        // 匹配开始标记
 	matchEnd    string                        // 匹配结束标记
 	paramsStart string                        // 参数开始标记
@@ -21,26 +21,26 @@ type replace struct {
 // 普通参数结构体
 type replaceParams struct {
 	args    bool              // 是否有参数
-	handler replaceParamsFunc // 参数处理函数
+	handler ReplaceParamsFunc // 参数处理函数
 }
 
 // 正则参数结构体
 type replaceRegexParams struct {
 	args    bool                   // 是否有参数
-	handler replaceRegexParamsFunc // 参数处理函数
+	handler ReplaceRegexParamsFunc // 参数处理函数
 }
 
 // 普通参数处理函数
 //	args - 参数解析列表
-type replaceParamsFunc func(args ...string) string
+type ReplaceParamsFunc func(args ...string) string
 
 // 正则参数处理函数
 //	params - 参数名解析列表
 //	args - 参数解析列表
-type replaceRegexParamsFunc func(params []string, args ...string) string
+type ReplaceRegexParamsFunc func(params []string, args ...string) string
 
-// 默认 replace 对象
-//	r := &replace{
+// 默认 Replace 对象
+//	r := &Replace{
 //		matchStart:  "{#",
 //		matchEnd:    "}",
 //		paramsStart: `\(`,
@@ -49,8 +49,8 @@ type replaceRegexParamsFunc func(params []string, args ...string) string
 //		params:      map[string]replaceParams{},
 //		regexParams: map[string]replaceParams{},
 //	}
-func Default() *replace {
-	r := &replace{
+func Default() *Replace {
+	r := &Replace{
 		matchStart:  "{#",
 		matchEnd:    "}",
 		paramsStart: `\(`,
@@ -62,8 +62,8 @@ func Default() *replace {
 	return r
 }
 
-// 新建 replace 对象
-//	r := &replace{
+// 新建 Replace 对象
+//	r := &Replace{
 //	 	matchStart:  "",
 //	 	matchEnd:    "",
 //	 	paramsStart: "",
@@ -72,8 +72,8 @@ func Default() *replace {
 //	 	params:      map[string]replaceParams{},
 //	 	regexParams: map[string]replaceRegexParams{},
 //	 }
-func New() *replace {
-	r := &replace{
+func New() *Replace {
+	r := &Replace{
 		matchStart:  "",
 		matchEnd:    "",
 		paramsStart: "",
@@ -89,7 +89,7 @@ func New() *replace {
 //	name - 参数名
 //	handler - 参数处理函数
 //	args - 是否有参数
-func (r *replace) AddParams(name string, handler func(...string) string, args bool) {
+func (r *Replace) AddParams(name string, handler func(...string) string, args bool) {
 	r.params[name] = replaceParams{args: args, handler: handler}
 }
 
@@ -97,26 +97,26 @@ func (r *replace) AddParams(name string, handler func(...string) string, args bo
 //	name - 参数名是正则表达式
 //	handler - 参数处理函数
 //	args - 是否有参数
-func (r *replace) AddRegexParams(name string, handler func([]string, ...string) string, args bool) {
+func (r *Replace) AddRegexParams(name string, handler func([]string, ...string) string, args bool) {
 	r.regexParams[name] = replaceRegexParams{args: args, handler: handler}
 }
 
 // DelParams - 删除普通参数
 //	name - 参数名
-func (r *replace) DelParams(name string) {
+func (r *Replace) DelParams(name string) {
 	delete(r.params, name)
 }
 
 // DelRegexParams - 删除正则参数
 //	name - 参数名是正则表达式
-func (r *replace) DelRegexParams(name string) {
+func (r *Replace) DelRegexParams(name string) {
 	delete(r.regexParams, name)
 }
 
 // SetMatch - 设置匹配开始标记和结束标记
 //	start - 匹配开始标记
 //	end - 匹配结束标记
-func (r *replace) SetMatch(start, end string) {
+func (r *Replace) SetMatch(start, end string) {
 	r.matchStart = start
 	r.matchEnd = end
 }
@@ -125,21 +125,21 @@ func (r *replace) SetMatch(start, end string) {
 //	start - 参数开始标记
 //	split - 参数分隔符号
 //	end - 参数结束标记
-func (r *replace) SetParams(start, split, end string) {
+func (r *Replace) SetParams(start, split, end string) {
 	r.paramsStart = start
 	r.paramsSplit = split
 	r.paramsEnd = end
 }
 
 // GetMatchRegex - 获取匹配正则
-func (r *replace) GetMatchRegex() *regexp.Regexp {
+func (r *Replace) GetMatchRegex() *regexp.Regexp {
 	regStr := r.matchStart + ".+?" + r.matchEnd
 	reg := regexp.MustCompile(regStr)
 	return reg
 }
 
 // GetParamsRegex - 获取参数正则
-func (r *replace) GetParamsRegex() *regexp.Regexp {
+func (r *Replace) GetParamsRegex() *regexp.Regexp {
 	regStr := `^` + r.matchStart + `([^` + r.paramsStart + `]+)` + `(?:` + r.paramsStart + `(.+?)` + r.paramsEnd + `)?` + r.matchEnd + `$`
 	reg := regexp.MustCompile(regStr)
 	return reg
@@ -147,26 +147,26 @@ func (r *replace) GetParamsRegex() *regexp.Regexp {
 
 // String - 返回替换后的字符串
 //	s - 要替换的字符串
-func (r *replace) String(s string) string {
+func (r *Replace) String(s string) string {
 	return r.replace(s)
 }
 
 // ToString - 替换字符串
 //	s - 要替换的字符串
-func (r *replace) ToString(s *string) {
+func (r *Replace) ToString(s *string) {
 	*s = r.replace(*s)
 }
 
 // replace - 替换
 //	s - 要替换的字符串
-func (r *replace) replace(s string) string {
+func (r *Replace) replace(s string) string {
 	reg := r.GetMatchRegex()
 	return reg.ReplaceAllStringFunc(s, r.replaceMatch)
 }
 
 // replaceMatch - 替换函数
 //	s - 要替换的字符串
-func (r *replace) replaceMatch(s string) string {
+func (r *Replace) replaceMatch(s string) string {
 	params, args := r.parseParams(s)
 	fmt.Printf("参数名: %s 参数值: %v", params, args)
 	if params == "" { // 没有参数
@@ -216,7 +216,7 @@ func (r *replace) replaceMatch(s string) string {
 //	s - 要解析的字符串
 //	params - 参数名
 //	args - 参数值
-func (r *replace) parseParams(s string) (params string, args []string) {
+func (r *Replace) parseParams(s string) (params string, args []string) {
 	reg := r.GetParamsRegex()
 	res := reg.FindStringSubmatch(s)
 	if len(res) >= 2 { // 参数名

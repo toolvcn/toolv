@@ -12,12 +12,12 @@ func Test_replace_AddParams(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		r    *replace
+		r    *Replace
 		args args
 	}{
-		{"名字", &replace{}, args{"name", func(...string) string { return "相思" }, false}},
-		{"性别", &replace{}, args{"gender", func(...string) string { return "男" }, false}},
-		{"网址", &replace{}, args{"url", func(...string) string { return "http://www.toolv.cn" }, false}},
+		{"名字", Default(), args{"name", func(...string) string { return "相思" }, false}},
+		{"性别", Default(), args{"gender", func(...string) string { return "男" }, false}},
+		{"网址", Default(), args{"url", func(...string) string { return "http://www.toolv.cn" }, false}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -35,16 +35,16 @@ func Test_replace_AddRegexParams(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		r    *replace
+		r    *Replace
 		args args
 	}{
-		{"名字", &replace{}, args{`name(\d+)`, func(params []string, args ...string) string {
+		{"名字", Default(), args{`name(\d+)`, func(params []string, args ...string) string {
 			return "相思" + params[0]
 		}, false}},
-		{"性别", &replace{}, args{`gender(\d+)`, func(params []string, args ...string) string {
+		{"性别", Default(), args{`gender(\d+)`, func(params []string, args ...string) string {
 			return "男" + params[0]
 		}, false}},
-		{"网址", &replace{}, args{`url(\d+)`, func(params []string, args ...string) string {
+		{"网址", Default(), args{`url(\d+)`, func(params []string, args ...string) string {
 			if params[0] == "1" {
 				return "https://www.toolv.cn"
 			}
@@ -66,13 +66,13 @@ func Test_replace_SetMatch(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		r    *replace
+		r    *Replace
 		args args
 	}{
-		{"{#...}", &replace{}, args{"{#", "}"}},
-		{"{#...#}", &replace{}, args{"{#", "#}"}},
-		{"#...#", &replace{}, args{"#", "#"}},
-		{"%...%", &replace{}, args{"%", "%"}},
+		{"{#...}", Default(), args{"{#", "}"}},
+		{"{#...#}", Default(), args{"{#", "#}"}},
+		{"#...#", Default(), args{"#", "#"}},
+		{"%...%", Default(), args{"%", "%"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -90,13 +90,13 @@ func Test_replace_SetParams(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		r    *replace
+		r    *Replace
 		args args
 	}{
-		{"(...)", &replace{}, args{"(", ",", ")"}},
-		{"#...#", &replace{}, args{"#", ",", "#"}},
-		{"%...%", &replace{}, args{"%", ",", "%"}},
-		{"&...&", &replace{}, args{"&", ",", "&"}},
+		{"(...)", Default(), args{"(", ",", ")"}},
+		{"#...#", Default(), args{"#", ",", "#"}},
+		{"%...%", Default(), args{"%", ",", "%"}},
+		{"&...&", Default(), args{"&", ",", "&"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -111,7 +111,7 @@ func Test_replace_replace(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		r    *replace
+		r    *Replace
 		args args
 	}{
 		{"名字", Default(), args{"{#name}"}},
