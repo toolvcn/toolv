@@ -90,6 +90,9 @@ func New() *Replace {
 //	handler - 参数处理函数
 //	args - 是否有参数
 func (r *Replace) AddParams(name string, handler func(...string) string, args bool) {
+	if r.params == nil {
+		r.params = make(map[string]replaceParams)
+	}
 	r.params[name] = replaceParams{args: args, handler: handler}
 }
 
@@ -98,6 +101,9 @@ func (r *Replace) AddParams(name string, handler func(...string) string, args bo
 //	handler - 参数处理函数
 //	args - 是否有参数
 func (r *Replace) AddRegexParams(name string, handler func([]string, ...string) string, args bool) {
+	if r.regexParams == nil {
+		r.regexParams = make(map[string]replaceRegexParams)
+	}
 	r.regexParams[name] = replaceRegexParams{args: args, handler: handler}
 }
 
