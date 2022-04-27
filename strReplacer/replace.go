@@ -14,75 +14,64 @@ type Replace struct {
 	ParamsStart string                        // 参数开始标记
 	ParamsSplit string                        // 参数分隔符号
 	ParamsEnd   string                        // 参数结束标记
-	params      map[string]replaceParams      // 普通参数列表
-	regexParams map[string]replaceRegexParams // 正则参数列表
+	Params      map[string]ReplaceParams      // 普通参数列表
+	RegexParams map[string]ReplaceRegexParams // 正则参数列表
 }
 
 // 普通参数结构体
-type replaceParams struct {
-	args    bool              // 是否有参数
-	handler ReplaceParamsFunc // 参数处理函数
+type ReplaceParams struct {
+	Args    bool                        // 是否有参数
+	Handler func(args ...string) string // 参数处理函数
 }
 
 // 正则参数结构体
-type replaceRegexParams struct {
-	args    bool                   // 是否有参数
-	handler ReplaceRegexParamsFunc // 参数处理函数
+type ReplaceRegexParams struct {
+	Args    bool                                         // 是否有参数
+	Handler func(params []string, args ...string) string // 参数处理函数
 }
 
-// 普通参数处理函数
-//	args - 参数解析列表
-type ReplaceParamsFunc func(args ...string) string
-
-// 正则参数处理函数
-//	params - 参数名解析列表
-//	args - 参数解析列表
-type ReplaceRegexParamsFunc func(params []string, args ...string) string
-
 // 默认 Replace 对象
-//	r := &Replace{
-//		MatchStart:  "{#",
-//		MatchEnd:    "}",
-//		ParamsStart: `\(`,
-//		ParamsSplit: ",",
-//		ParamsEnd:   `\)`,
-//		params:      map[string]replaceParams{},
-//		regexParams: map[string]replaceParams{},
-//	}
+//	 return &Replace{
+//	 	MatchStart:  "{#",
+//	 	MatchEnd:    "}",
+//	 	ParamsStart: `\(`,
+//	 	ParamsSplit: ",",
+//	 	ParamsEnd:   `\)`,
+//	 	Params:      make(map[string]ReplaceParams),
+//	 	RegexParams: make(map[string]ReplaceRegexParams),
+//	 }
 func Default() *Replace {
-	r := &Replace{
+	return &Replace{
 		MatchStart:  "{#",
 		MatchEnd:    "}",
 		ParamsStart: `\(`,
 		ParamsSplit: ",",
 		ParamsEnd:   `\)`,
-		params:      map[string]replaceParams{},
-		regexParams: map[string]replaceRegexParams{},
+		Params:      make(map[string]ReplaceParams),
+		RegexParams: make(map[string]ReplaceRegexParams),
 	}
-	return r
 }
 
 // 新建 Replace 对象
-//	r := &Replace{
+//	 return &Replace{
 //	 	MatchStart:  "",
 //	 	MatchEnd:    "",
 //	 	ParamsStart: "",
 //	 	ParamsSplit: "",
 //	 	ParamsEnd:   "",
-//	 	params:      map[string]replaceParams{},
-//	 	regexParams: map[string]replaceRegexParams{},
+//	 	Params:      make(map[string]ReplaceParams),
+//	 	RegexParams: make(map[string]ReplaceRegexParams),
 //	 }
 func New() *Replace {
-	r := &Replace{
+	return &Replace{
 		MatchStart:  "",
 		MatchEnd:    "",
 		ParamsStart: "",
 		ParamsSplit: "",
 		ParamsEnd:   "",
-		params:      map[string]replaceParams{},
-		regexParams: map[string]replaceRegexParams{},
+		Params:      make(map[string]ReplaceParams),
+		RegexParams: make(map[string]ReplaceRegexParams),
 	}
-	return r
 }
 
 // AddParams - 添加普通参数
@@ -90,10 +79,10 @@ func New() *Replace {
 //	handler - 参数处理函数
 //	args - 是否有参数
 func (r *Replace) AddParams(name string, handler func(...string) string, args bool) {
-	if r.params == nil {
-		r.params = make(map[string]replaceParams)
+	if r.Params == nil {
+		r.Params = make(map[string]ReplaceParams)
 	}
-	r.params[name] = replaceParams{args: args, handler: handler}
+	r.Params[name] = ReplaceParams{Args: args, Handler: handler}
 }
 
 // AddRegexParams - 添加正则参数
@@ -101,22 +90,22 @@ func (r *Replace) AddParams(name string, handler func(...string) string, args bo
 //	handler - 参数处理函数
 //	args - 是否有参数
 func (r *Replace) AddRegexParams(name string, handler func([]string, ...string) string, args bool) {
-	if r.regexParams == nil {
-		r.regexParams = make(map[string]replaceRegexParams)
+	if r.RegexParams == nil {
+		r.RegexParams = make(map[string]ReplaceRegexParams)
 	}
-	r.regexParams[name] = replaceRegexParams{args: args, handler: handler}
+	r.RegexParams[name] = ReplaceRegexParams{Args: args, Handler: handler}
 }
 
 // DelParams - 删除普通参数
 //	name - 参数名
 func (r *Replace) DelParams(name string) {
-	delete(r.params, name)
+	delete(r.Params, name)
 }
 
 // DelRegexParams - 删除正则参数
 //	name - 参数名是正则表达式
 func (r *Replace) DelRegexParams(name string) {
-	delete(r.regexParams, name)
+	delete(r.RegexParams, name)
 }
 
 // getMatchRegex - 获取匹配正则
@@ -161,41 +150,41 @@ func (r *Replace) replaceMatch(s string) string {
 		return s
 	}
 	// 从正则参数中获取
-	for k, v := range r.regexParams {
+	for k, v := range r.RegexParams {
 		reg := regexp.MustCompile(k)
 		res := reg.FindStringSubmatch(params)
 		if len(res) > 0 {
-			if v.args { // 有参数
+			if v.Args { // 有参数
 				if len(args) == 0 { // 没有参数值
 					// fmt.Printf("参数名: %s 参数值: %v 没有获取到参数值", params, args)
 					return s
 				}
-				return v.handler(res[1:], args...)
+				return v.Handler(res[1:], args...)
 			}
 			if len(args) != 0 { // 没有设置参数，但是有参数
 				// fmt.Printf("参数名: %s 参数值: %v 没有设置参数，但是有参数", params, args)
 				return s
 			}
-			return v.handler(res[1:])
+			return v.Handler(res[1:])
 		}
 	}
 	// 从普通参数中获取
-	for k, v := range r.params {
+	for k, v := range r.Params {
 		if k != params {
 			continue
 		}
-		if v.args { // 有参数
+		if v.Args { // 有参数
 			if len(args) == 0 { // 没有参数值
 				// fmt.Printf("参数名: %s 参数值: %v 没有获取到参数值", params, args)
 				return s
 			}
-			return v.handler(args...)
+			return v.Handler(args...)
 		}
 		if len(args) != 0 { // 没有设置参数，但是有参数
 			// fmt.Printf("参数名: %s 参数值: %v 没有设置参数，但是有参数", params, args)
 			return s
 		}
-		return v.handler()
+		return v.Handler()
 	}
 	return s
 }

@@ -22,7 +22,7 @@ func Test_replace_AddParams(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.r.AddParams(tt.args.name, tt.args.handler, tt.args.args)
-			t.Logf("%+v", tt.r.params)
+			t.Logf("%+v", tt.r.Params)
 		})
 	}
 }
@@ -54,7 +54,7 @@ func Test_replace_AddRegexParams(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.r.AddRegexParams(tt.args.name, tt.args.handler, tt.args.args)
-			t.Logf("%+v", tt.r.regexParams)
+			t.Logf("%+v", tt.r.RegexParams)
 		})
 	}
 }
