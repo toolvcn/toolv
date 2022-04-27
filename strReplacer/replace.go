@@ -9,11 +9,11 @@ import (
 
 // 替换配置
 type Replace struct {
-	matchStart  string                        // 匹配开始标记
-	matchEnd    string                        // 匹配结束标记
-	paramsStart string                        // 参数开始标记
-	paramsSplit string                        // 参数分隔符号
-	paramsEnd   string                        // 参数结束标记
+	MatchStart  string                        // 匹配开始标记
+	MatchEnd    string                        // 匹配结束标记
+	ParamsStart string                        // 参数开始标记
+	ParamsSplit string                        // 参数分隔符号
+	ParamsEnd   string                        // 参数结束标记
 	params      map[string]replaceParams      // 普通参数列表
 	regexParams map[string]replaceRegexParams // 正则参数列表
 }
@@ -41,21 +41,21 @@ type ReplaceRegexParamsFunc func(params []string, args ...string) string
 
 // 默认 Replace 对象
 //	r := &Replace{
-//		matchStart:  "{#",
-//		matchEnd:    "}",
-//		paramsStart: `\(`,
-//		paramsSplit: ",",
-//		paramsEnd:   `\)`,
+//		MatchStart:  "{#",
+//		MatchEnd:    "}",
+//		ParamsStart: `\(`,
+//		ParamsSplit: ",",
+//		ParamsEnd:   `\)`,
 //		params:      map[string]replaceParams{},
 //		regexParams: map[string]replaceParams{},
 //	}
 func Default() *Replace {
 	r := &Replace{
-		matchStart:  "{#",
-		matchEnd:    "}",
-		paramsStart: `\(`,
-		paramsSplit: ",",
-		paramsEnd:   `\)`,
+		MatchStart:  "{#",
+		MatchEnd:    "}",
+		ParamsStart: `\(`,
+		ParamsSplit: ",",
+		ParamsEnd:   `\)`,
 		params:      map[string]replaceParams{},
 		regexParams: map[string]replaceRegexParams{},
 	}
@@ -64,21 +64,21 @@ func Default() *Replace {
 
 // 新建 Replace 对象
 //	r := &Replace{
-//	 	matchStart:  "",
-//	 	matchEnd:    "",
-//	 	paramsStart: "",
-//	 	paramsSplit: "",
-//	 	paramsEnd:   "",
+//	 	MatchStart:  "",
+//	 	MatchEnd:    "",
+//	 	ParamsStart: "",
+//	 	ParamsSplit: "",
+//	 	ParamsEnd:   "",
 //	 	params:      map[string]replaceParams{},
 //	 	regexParams: map[string]replaceRegexParams{},
 //	 }
 func New() *Replace {
 	r := &Replace{
-		matchStart:  "",
-		matchEnd:    "",
-		paramsStart: "",
-		paramsSplit: "",
-		paramsEnd:   "",
+		MatchStart:  "",
+		MatchEnd:    "",
+		ParamsStart: "",
+		ParamsSplit: "",
+		ParamsEnd:   "",
 		params:      map[string]replaceParams{},
 		regexParams: map[string]replaceRegexParams{},
 	}
@@ -119,34 +119,16 @@ func (r *Replace) DelRegexParams(name string) {
 	delete(r.regexParams, name)
 }
 
-// SetMatch - 设置匹配开始标记和结束标记
-//	start - 匹配开始标记
-//	end - 匹配结束标记
-func (r *Replace) SetMatch(start, end string) {
-	r.matchStart = start
-	r.matchEnd = end
-}
-
-// SetParams - 设置参数开始标记和结束标记
-//	start - 参数开始标记
-//	split - 参数分隔符号
-//	end - 参数结束标记
-func (r *Replace) SetParams(start, split, end string) {
-	r.paramsStart = start
-	r.paramsSplit = split
-	r.paramsEnd = end
-}
-
-// GetMatchRegex - 获取匹配正则
-func (r *Replace) GetMatchRegex() *regexp.Regexp {
-	regStr := r.matchStart + ".+?" + r.matchEnd
+// getMatchRegex - 获取匹配正则
+func (r *Replace) getMatchRegex() *regexp.Regexp {
+	regStr := r.MatchStart + ".+?" + r.MatchEnd
 	reg := regexp.MustCompile(regStr)
 	return reg
 }
 
-// GetParamsRegex - 获取参数正则
-func (r *Replace) GetParamsRegex() *regexp.Regexp {
-	regStr := `^` + r.matchStart + `([^` + r.paramsStart + `]+)` + `(?:` + r.paramsStart + `(.+?)` + r.paramsEnd + `)?` + r.matchEnd + `$`
+// getParamsRegex - 获取参数正则
+func (r *Replace) getParamsRegex() *regexp.Regexp {
+	regStr := `^` + r.MatchStart + `([^` + r.ParamsStart + `]+)` + `(?:` + r.ParamsStart + `(.+?)` + r.ParamsEnd + `)?` + r.MatchEnd + `$`
 	reg := regexp.MustCompile(regStr)
 	return reg
 }
@@ -166,7 +148,7 @@ func (r *Replace) ToString(s *string) {
 // replace - 替换
 //	s - 要替换的字符串
 func (r *Replace) replace(s string) string {
-	reg := r.GetMatchRegex()
+	reg := r.getMatchRegex()
 	return reg.ReplaceAllStringFunc(s, r.replaceMatch)
 }
 
@@ -223,13 +205,13 @@ func (r *Replace) replaceMatch(s string) string {
 //	params - 参数名
 //	args - 参数值
 func (r *Replace) parseParams(s string) (params string, args []string) {
-	reg := r.GetParamsRegex()
+	reg := r.getParamsRegex()
 	res := reg.FindStringSubmatch(s)
 	if len(res) >= 2 { // 参数名
 		params = res[1]
 	}
 	if len(res) == 3 && res[2] != "" { // 参数值
-		s := strings.Split(res[2], r.paramsSplit)
+		s := strings.Split(res[2], r.ParamsSplit)
 		for _, v := range s {
 			if v == "" { // 有一个参数为空就不执行
 				return

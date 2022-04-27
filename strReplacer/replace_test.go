@@ -59,52 +59,6 @@ func Test_replace_AddRegexParams(t *testing.T) {
 	}
 }
 
-func Test_replace_SetMatch(t *testing.T) {
-	type args struct {
-		start string
-		end   string
-	}
-	tests := []struct {
-		name string
-		r    *Replace
-		args args
-	}{
-		{"{#...}", Default(), args{"{#", "}"}},
-		{"{#...#}", Default(), args{"{#", "#}"}},
-		{"#...#", Default(), args{"#", "#"}},
-		{"%...%", Default(), args{"%", "%"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.SetMatch(tt.args.start, tt.args.end)
-			t.Logf("matchStart: '%s' matchEnd: '%s'", tt.r.matchStart, tt.r.matchEnd)
-		})
-	}
-}
-
-func Test_replace_SetParams(t *testing.T) {
-	type args struct {
-		start string
-		split string
-		end   string
-	}
-	tests := []struct {
-		name string
-		r    *Replace
-		args args
-	}{
-		{"(...)", Default(), args{"(", ",", ")"}},
-		{"#...#", Default(), args{"#", ",", "#"}},
-		{"%...%", Default(), args{"%", ",", "%"}},
-		{"&...&", Default(), args{"&", ",", "&"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.r.SetParams(tt.args.start, tt.args.split, tt.args.end)
-		})
-	}
-}
-
 func Test_replace_replace(t *testing.T) {
 	type args struct {
 		s string
