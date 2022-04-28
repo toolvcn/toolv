@@ -2,33 +2,32 @@
 package strReplacer
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 )
 
-// 替换配置
-type Replace struct {
-	MatchStart  string                        // 匹配开始标记
-	MatchEnd    string                        // 匹配结束标记
-	ParamsStart string                        // 参数开始标记
-	ParamsSplit string                        // 参数分隔符号
-	ParamsEnd   string                        // 参数结束标记
-	Params      map[string]ReplaceParams      // 普通参数列表
-	RegexParams map[string]ReplaceRegexParams // 正则参数列表
-}
-
-// 普通参数结构体
-type ReplaceParams struct {
-	Args    bool                        // 是否有参数
-	Handler func(args ...string) string // 参数处理函数
-}
-
-// 正则参数结构体
-type ReplaceRegexParams struct {
-	Args    bool                                         // 是否有参数
-	Handler func(params []string, args ...string) string // 参数处理函数
-}
+type (
+	// 替换配置
+	Replace struct {
+		MatchStart  string                        // 匹配开始标记
+		MatchEnd    string                        // 匹配结束标记
+		ParamsStart string                        // 参数开始标记
+		ParamsSplit string                        // 参数分隔符号
+		ParamsEnd   string                        // 参数结束标记
+		Params      map[string]ReplaceParams      // 普通参数列表
+		RegexParams map[string]ReplaceRegexParams // 正则参数列表
+	}
+	// 普通参数结构体
+	ReplaceParams struct {
+		Args    bool                        // 是否有参数
+		Handler func(args ...string) string // 参数处理函数
+	}
+	// 正则参数结构体
+	ReplaceRegexParams struct {
+		Args    bool                                         // 是否有参数
+		Handler func(params []string, args ...string) string // 参数处理函数
+	}
+)
 
 // 默认 Replace 对象
 //	 return &Replace{
@@ -145,7 +144,6 @@ func (r *Replace) replace(s string) string {
 //	s - 要替换的字符串
 func (r *Replace) replaceMatch(s string) string {
 	params, args := r.parseParams(s)
-	fmt.Printf("参数名: %s 参数值: %v", params, args)
 	if params == "" { // 没有参数
 		return s
 	}
@@ -156,13 +154,11 @@ func (r *Replace) replaceMatch(s string) string {
 		if len(res) > 0 {
 			if v.Args { // 有参数
 				if len(args) == 0 { // 没有参数值
-					// fmt.Printf("参数名: %s 参数值: %v 没有获取到参数值", params, args)
 					return s
 				}
 				return v.Handler(res[1:], args...)
 			}
 			if len(args) != 0 { // 没有设置参数，但是有参数
-				// fmt.Printf("参数名: %s 参数值: %v 没有设置参数，但是有参数", params, args)
 				return s
 			}
 			return v.Handler(res[1:])
@@ -175,13 +171,11 @@ func (r *Replace) replaceMatch(s string) string {
 		}
 		if v.Args { // 有参数
 			if len(args) == 0 { // 没有参数值
-				// fmt.Printf("参数名: %s 参数值: %v 没有获取到参数值", params, args)
 				return s
 			}
 			return v.Handler(args...)
 		}
 		if len(args) != 0 { // 没有设置参数，但是有参数
-			// fmt.Printf("参数名: %s 参数值: %v 没有设置参数，但是有参数", params, args)
 			return s
 		}
 		return v.Handler()
