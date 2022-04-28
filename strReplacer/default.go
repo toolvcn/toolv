@@ -2,6 +2,7 @@ package strReplacer
 
 import (
 	"math/rand"
+	"time"
 )
 
 // 随机字符串
@@ -37,10 +38,11 @@ func RandStr(letter []string, n int) string {
 		}
 	}
 	// 生成随机字符串
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	var strByt = []byte(str)
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = strByt[rand.Intn(len(str))]
+		b[i] = strByt[r.Intn(len(str))]
 	}
 	return string(b)
 }
