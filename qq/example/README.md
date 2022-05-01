@@ -29,8 +29,10 @@ func main() {
             panic(err)
         }
         fmt.Printf("%+v\n", qrStatus)
-        if qrStatus.Status == 0 {
-            fmt.Println("登录成功")
+        if qrStatus.Status == 0 { // 登录成功
+            break
+        }
+        if qrStatus.Status < 0 { // 登录失败
             break
         }
     }

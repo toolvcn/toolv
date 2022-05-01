@@ -52,32 +52,34 @@ func (login *qrLoginStruct) client() *http.Client {
 }
 
 // 获取扫码图片地址
-func (login *qrLoginStruct) qrShowUrl() string {
-	rand.Seed(time.Now().UnixNano())
-	t := rand.Float32()
-	url := fmt.Sprintf("https://ssl.ptlogin2.qq.com/ptqrshow?appid=%s&e=2&l=M&s=3&d=72&v=4&t=%.16f&daid=8&pt_3rd_aid=0", login.Appid, t)
-	return url
+func (login *qrLoginStruct) qrShowUrl() (url string) {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	t := r.Float32()
+	url = fmt.Sprintf("https://ssl.ptlogin2.qq.com/ptqrshow?appid=%s&e=2&l=M&s=3&d=72&v=4&t=%.16f&daid=8&pt_3rd_aid=0", login.Appid, t)
+	return
 }
 
 // 获取扫码图片信息
-func (login *qrLoginStruct) GetQr() (getQrStruct, error) {
-	var data getQrStruct
-	req, err := http.NewRequest("GET", login.qrShowUrl(), nil)
-	if err != nil {
-		return data, err
+func (login *qrLoginStruct) GetQr() (data getQrStruct, err error) {
+	var (
+		req       *http.Request
+		resp      *http.Response
+		bodyBytes []byte
+	)
+	if req, err = http.NewRequest("GET", login.qrShowUrl(), nil); err != nil {
+		return
 	}
 	req.Header.Set("User-Agent", login.UserAgent)
-	resp, err := login.client().Do(req)
-	if err != nil {
-		return data, err
+	if resp, err = login.client().Do(req); err != nil {
+		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return data, errors.New("响应图片信息失败")
+		err = errors.New("响应图片信息失败")
+		return
 	}
-	respByte, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return data, err
+	if bodyBytes, err = ioutil.ReadAll(resp.Body); err != nil {
+		return
 	}
 	for _, v := range resp.Cookies() {
 		if v.Name == "qrsig" {
@@ -85,100 +87,94 @@ func (login *qrLoginStruct) GetQr() (getQrStruct, error) {
 		}
 	}
 	if data.Qrsig == "" {
-		return data, errors.New("获取qrsig失败")
+		err = errors.New("获取qrsig失败")
+		return
 	}
-	data.Image = fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(respByte))
-	return data, nil
+	data.Image = fmt.Sprintf("data:image/png;base64,%s", base64.StdEncoding.EncodeToString(bodyBytes))
+	return
 }
 
 // 检测登录状态
-func (login *qrLoginStruct) LoginStatus(qrsig string) (loginStatusStruct, error) {
-	var data loginStatusStruct
-	ptqrtoken := fmt.Sprintf("%d", login.ptqrtoken(qrsig))
-	action := fmt.Sprintf("%d", time.Now().UnixMilli())
-	url := "https://xui.ptlogin2.qq.com/ssl/ptqrlogin?u1=https%3A%2F%2Fcf.qq.com%2F&ptqrtoken=" + ptqrtoken + "&ptredirect=1&h=1&t=1&g=1&from_ui=1&ptlang=2052&action=0-0-" + action + "&js_ver=22011714&js_type=1&login_sig=" + qrsig + "&pt_uistyle=40&aid=" + login.Appid + "&daid=8&"
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return data, err
+func (login *qrLoginStruct) LoginStatus(qrsig string) (data loginStatusStruct, err error) {
+	var (
+		ptqrtoken = fmt.Sprintf("%d", login.ptqrtoken(qrsig))
+		action    = fmt.Sprintf("%d", time.Now().UnixMilli())
+		url       = "https://xui.ptlogin2.qq.com/ssl/ptqrlogin?u1=https%3A%2F%2Fcf.qq.com%2F&ptqrtoken=" + ptqrtoken + "&ptredirect=1&h=1&t=1&g=1&from_ui=1&ptlang=2052&action=0-0-" + action + "&js_ver=22011714&js_type=1&login_sig=" + qrsig + "&pt_uistyle=40&aid=" + login.Appid + "&daid=8&"
+		req       *http.Request
+		resp      *http.Response
+		bodyBytes []byte
+		result    []string
+	)
+	if req, err = http.NewRequest("GET", url, nil); err != nil {
+		return
 	}
 	req.Header.Set("User-Agent", login.UserAgent)
 	req.AddCookie(&http.Cookie{Name: "qrsig", Value: qrsig})
-	resp, err := login.client().Do(req)
-	if err != nil {
-		return data, err
+	if resp, err = login.client().Do(req); err != nil {
+		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		return data, errors.New("响应登录信息失败")
+		err = errors.New("响应登录状态失败")
+		return
 	}
-	respByte, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return data, err
+	if bodyBytes, err = ioutil.ReadAll(resp.Body); err != nil {
+		return
 	}
-	reg := regexp.MustCompile(`ptuiCB\('(.*)','(.*)','(.*)','(.*)','(.*)', '(.*)'\)`)
-	result := reg.FindStringSubmatch(string(respByte))
-	if result == nil {
+	if result = regexp.MustCompile(`ptuiCB\('(.*)','(.*)','(.*)','(.*)','(.*)', '(.*)'\)`).FindStringSubmatch(string(bodyBytes)); result == nil {
 		return data, errors.New("查找不到登录信息")
 	}
 	switch result[1] {
 	case "0":
-		data.Name = result[6]
-		data.Url = result[3]
-		// 从URL中提取QQ号
-		reg2 := regexp.MustCompile(`&uin=([1-9][0-9]{4,9})&`)
-		qqReg := reg2.FindStringSubmatch(data.Url)
+		var (
+			req2  *http.Request
+			resp2 *http.Response
+		)
+		data.Name, data.Url = result[6], result[3]
+		qqReg := regexp.MustCompile(`&uin=([1-9][0-9]{4,9})&`).FindStringSubmatch(data.Url) // 从URL中提取QQ号
 		if qqReg == nil {
-			return data, errors.New("获取QQ号失败")
+			err = errors.New("获取QQ号失败")
+			return
 		}
 		data.Uin = qqReg[1]
-		// 获取 Cookie
-		req2, err := http.NewRequest("GET", data.Url, nil)
-		if err != nil {
-			return data, err
+		if req2, err = http.NewRequest("GET", data.Url, nil); err != nil { // 获取 Cookie
+			return
 		}
-		resp2, err := http.DefaultTransport.RoundTrip(req2)
-		if err != nil {
+		if resp2, err = http.DefaultTransport.RoundTrip(req2); err != nil {
 			return data, err
 		}
 		defer resp2.Body.Close()
 		for _, v := range resp2.Cookies() {
-			if v.Name == "skey" && v.Domain == "qq.com" {
+			switch {
+			case v.Domain == "qq.com" && v.Name == "skey":
 				data.Skey = v.Value
-			}
-			if v.Domain == "game.qq.com" {
-				if v.Name == "p_skey" {
-					data.P_skey = v.Value
-				}
-				if v.Name == "pt4_token" {
-					data.Pt4_token = v.Value
-				}
+				fallthrough
+			case v.Domain == "game.qq.com" && v.Name == "p_skey":
+				data.P_skey = v.Value
+				fallthrough
+			case v.Domain == "game.qq.com" && v.Name == "pt4_token":
+				data.Pt4_token = v.Value
 			}
 		}
 		if len(data.Uin) > 10 || len(data.Skey) != 10 || len(data.P_skey) != 44 || len(data.Pt4_token) != 44 {
-			return data, errors.New("获取登录信息失败")
+			err = errors.New("获取登录信息失败")
+			return
 		}
-		data.Status = 0
-		data.Message = "登录成功"
+		data.Status, data.Message = 0, "登录成功"
 	case "7":
-		data.Status = -1
-		data.Message = "提交参数错误，请检查。"
+		data.Status, data.Message = -1, "提交参数错误，请检查。"
 	case "65":
-		data.Status = -1
-		data.Message = "二维码已失效。"
+		data.Status, data.Message = -1, "二维码已失效。"
 	case "66":
-		data.Status = 1
-		data.Message = "二维码未失效。"
+		data.Status, data.Message = 1, "二维码未失效。"
 	case "67":
-		data.Status = 2
-		data.Message = "二维码认证中。"
+		data.Status, data.Message = 2, "二维码认证中。"
 	case "68":
-		data.Status = -1
-		data.Message = "本次登录已被拒绝。"
+		data.Status, data.Message = -1, "本次登录已被拒绝。"
 	default:
-		data.Status = -2
-		data.Message = result[5]
+		data.Status, data.Message = -2, result[5]
 	}
-	return data, nil
+	return
 }
 
 // ptqrtoken 计算
