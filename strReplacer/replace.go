@@ -73,10 +73,10 @@ func New() *Replace {
 	}
 }
 
-// AddParams - 添加普通参数
-//	name - 参数名
+// 添加普通参数
+//	name    - 参数名
 //	handler - 参数处理函数
-//	args - 是否有参数
+//	args    - 是否有参数
 func (r *Replace) AddParams(name string, handler func(...string) string, args bool) {
 	if r.Params == nil {
 		r.Params = make(map[string]ReplaceParams)
@@ -84,10 +84,10 @@ func (r *Replace) AddParams(name string, handler func(...string) string, args bo
 	r.Params[name] = ReplaceParams{Args: args, Handler: handler}
 }
 
-// AddRegexParams - 添加正则参数
-//	name - 参数名是正则表达式
+// 添加正则参数
+//	name    - 参数名是正则表达式
 //	handler - 参数处理函数
-//	args - 是否有参数
+//	args    - 是否有参数
 func (r *Replace) AddRegexParams(name string, handler func([]string, ...string) string, args bool) {
 	if r.RegexParams == nil {
 		r.RegexParams = make(map[string]ReplaceRegexParams)
@@ -95,39 +95,25 @@ func (r *Replace) AddRegexParams(name string, handler func([]string, ...string) 
 	r.RegexParams[name] = ReplaceRegexParams{Args: args, Handler: handler}
 }
 
-// DelParams - 删除普通参数
+// 删除普通参数
 //	name - 参数名
 func (r *Replace) DelParams(name string) {
 	delete(r.Params, name)
 }
 
-// DelRegexParams - 删除正则参数
+// 删除正则参数
 //	name - 参数名是正则表达式
 func (r *Replace) DelRegexParams(name string) {
 	delete(r.RegexParams, name)
 }
 
-// getMatchRegex - 获取匹配正则
-func (r *Replace) getMatchRegex() *regexp.Regexp {
-	regStr := r.MatchStart + ".+?" + r.MatchEnd
-	reg := regexp.MustCompile(regStr)
-	return reg
-}
-
-// getParamsRegex - 获取参数正则
-func (r *Replace) getParamsRegex() *regexp.Regexp {
-	regStr := `^` + r.MatchStart + `([^` + r.ParamsStart + `]+)` + `(?:` + r.ParamsStart + `(.+?)` + r.ParamsEnd + `)?` + r.MatchEnd + `$`
-	reg := regexp.MustCompile(regStr)
-	return reg
-}
-
-// String - 返回替换后的字符串
+// 返回替换后的字符串
 //	s - 要替换的字符串
 func (r *Replace) String(s string) string {
 	return r.replace(s)
 }
 
-// ToString - 替换字符串
+// 替换字符串
 //	s - 要替换的字符串
 func (r *Replace) ToString(s *string) {
 	*s = r.replace(*s)
@@ -136,11 +122,11 @@ func (r *Replace) ToString(s *string) {
 // replace - 替换
 //	s - 要替换的字符串
 func (r *Replace) replace(s string) string {
-	reg := r.getMatchRegex()
+	reg := regexp.MustCompile(r.MatchStart + ".+?" + r.MatchEnd)
 	return reg.ReplaceAllStringFunc(s, r.replaceMatch)
 }
 
-// replaceMatch - 替换函数
+// 替换函数
 //	s - 要替换的字符串
 func (r *Replace) replaceMatch(s string) string {
 	params, args := r.parseParams(s)
@@ -149,54 +135,51 @@ func (r *Replace) replaceMatch(s string) string {
 	}
 	// 从正则参数中获取
 	for k, v := range r.RegexParams {
-		reg := regexp.MustCompile(k)
-		res := reg.FindStringSubmatch(params)
-		if len(res) > 0 {
-			if v.Args { // 有参数
-				if len(args) == 0 { // 没有参数值
-					return s
-				}
-				return v.Handler(res[1:], args...)
-			}
-			if len(args) != 0 { // 没有设置参数，但是有参数
-				return s
-			}
+		res := regexp.MustCompile(k).FindStringSubmatch(params)
+		switch {
+		case res == nil: // 没有匹配到
+			continue
+		case v.Args && len(args) > 0: // 有参数,且参数数量大于0
+			return v.Handler(res[1:], args...)
+		case !v.Args && len(args) == 0: // 没有参数,且参数数量为0
 			return v.Handler(res[1:])
+		default:
+			return s
 		}
 	}
 	// 从普通参数中获取
 	for k, v := range r.Params {
-		if k != params {
+		switch {
+		case k != params: // 没有匹配到
 			continue
-		}
-		if v.Args { // 有参数
-			if len(args) == 0 { // 没有参数值
-				return s
-			}
+		case v.Args && len(args) > 0: // 有参数,且参数数量大于0
 			return v.Handler(args...)
-		}
-		if len(args) != 0 { // 没有设置参数，但是有参数
+		case !v.Args && len(args) == 0: // 没有参数,且参数数量为0
+			return v.Handler()
+		default:
 			return s
 		}
-		return v.Handler()
 	}
 	return s
 }
 
-// parseParams - 解析参数
-//	s - 要解析的字符串
+// 解析参数
+//	s      - 要解析的字符串
 //	params - 参数名
-//	args - 参数值
+//	args   - 参数值
 func (r *Replace) parseParams(s string) (params string, args []string) {
-	reg := r.getParamsRegex()
+	reg := regexp.MustCompile(`^` + r.MatchStart + `([^` + r.ParamsStart + `]+)` + `(?:` + r.ParamsStart + `(.+?)` + r.ParamsEnd + `)?` + r.MatchEnd + `$`)
 	res := reg.FindStringSubmatch(s)
-	if len(res) >= 2 { // 参数名
+	switch {
+	case res == nil: // 没有匹配到
+		return
+	case len(res) >= 2: // 匹配到参数名
 		params = res[1]
-	}
-	if len(res) == 3 && res[2] != "" { // 参数值
+		fallthrough
+	case len(res) == 3: // 匹配到参数值
 		s := strings.Split(res[2], r.ParamsSplit)
-		for _, v := range s {
-			if v == "" { // 有一个参数为空就不执行
+		for _, v := range s { // 确保参数值不为空
+			if v == "" {
 				return
 			}
 		}

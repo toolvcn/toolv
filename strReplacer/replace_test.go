@@ -63,15 +63,16 @@ func Test_replace_replace(t *testing.T) {
 	type args struct {
 		s string
 	}
+	r := Default()
+	r.AddParams("name", func(...string) string { return "相思" }, false)
+	r.AddParams("name2", func(args ...string) string { return "相思，性别：" + args[0] }, true)
 	tests := []struct {
 		name string
 		r    *Replace
 		args args
 	}{
-		{"名字", Default(), args{"{#name}"}},
-		{"名字", Default(), args{"{#name(a,b,c)}"}},
-		{"名字", Default(), args{"{#name(1,2,3)}"}},
-		{"名字", Default(), args{"{#name(1,2,3,4)}"}},
+		{"名字", r, args{"{#name}"}},
+		{"名字", r, args{"{#name2(nan)}"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

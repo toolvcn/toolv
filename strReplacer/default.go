@@ -27,20 +27,18 @@ func RandStr(letter []string, n int) string {
 	// 处理letter
 	var str string
 	for _, v := range letter {
-		if letters[v] != "" { // 从预设中取出
-			str += letters[v]
-		} else {
-			if v != "" { // 自定义
-				str += v
-			} else {
-				return "" // 没有字符串
-			}
+		if s, ok := letters[v]; ok { // 存在
+			str += s
+			continue
 		}
+		if v == "" {
+			return ""
+		}
+		str += v // 自定义字符串
 	}
 	// 生成随机字符串
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	var strByt = []byte(str)
-	b := make([]byte, n)
+	b, strByt := make([]byte, n), []byte(str)
 	for i := range b {
 		b[i] = strByt[r.Intn(len(str))]
 	}
