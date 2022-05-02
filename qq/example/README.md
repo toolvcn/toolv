@@ -24,7 +24,7 @@ func main() {
     // 2.获取二维码状态
     for {
         time.Sleep(time.Second * 5)
-        qrStatus, err := q.LoginStatus(qr.Qrsig)
+        qrStatus, err := q.Check(qr.Qrsig)
         if err != nil { // 获取二维码状态失败错误信息
             panic(err)
         }

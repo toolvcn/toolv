@@ -95,7 +95,7 @@ func (login *qrLoginStruct) GetQr() (data getQrStruct, err error) {
 }
 
 // 检测登录状态
-func (login *qrLoginStruct) LoginStatus(qrsig string) (data loginStatusStruct, err error) {
+func (login *qrLoginStruct) Check(qrsig string) (data loginStatusStruct, err error) {
 	var (
 		ptqrtoken = fmt.Sprintf("%d", login.ptqrtoken(qrsig))
 		action    = fmt.Sprintf("%d", time.Now().UnixMilli())
