@@ -13,18 +13,18 @@ import (
 
 type (
 	// QQ扫码登录
-	qrLoginStruct struct {
+	QrLoginStruct struct {
 		Appid     string        // 应用 ID
 		UserAgent string        // 请求 User-Agent 配置
 		Timeout   time.Duration // 请求超时时间
 	}
 	// 图片信息结构
-	getQrStruct struct {
+	GetQrStruct struct {
 		Qrsig string `json:"qrsig"` // Qrsig
 		Image string `json:"image"` // base64 图片
 	}
 	// 登录状态结构
-	loginStatusStruct struct {
+	LoginStatusStruct struct {
 		Status    int    `json:"-"`    // 状态
 		Message   string `json:"-"`    // 消息
 		Uin       string `json:"uin"`  // QQ号码
@@ -36,8 +36,8 @@ type (
 	}
 )
 
-func NewQrLogin() *qrLoginStruct {
-	return &qrLoginStruct{
+func NewQrLogin() *QrLoginStruct {
+	return &QrLoginStruct{
 		Appid:     "549000912",
 		UserAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36 Edg/97.0.1072.55",
 		Timeout:   time.Second * 10,
@@ -45,14 +45,14 @@ func NewQrLogin() *qrLoginStruct {
 }
 
 // 请求客户端
-func (login *qrLoginStruct) client() *http.Client {
+func (login *QrLoginStruct) client() *http.Client {
 	return &http.Client{
 		Timeout: login.Timeout,
 	}
 }
 
 // 获取扫码图片地址
-func (login *qrLoginStruct) qrShowUrl() (url string) {
+func (login *QrLoginStruct) qrShowUrl() (url string) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	t := r.Float32()
 	url = fmt.Sprintf("https://ssl.ptlogin2.qq.com/ptqrshow?appid=%s&e=2&l=M&s=3&d=72&v=4&t=%.16f&daid=8&pt_3rd_aid=0", login.Appid, t)
@@ -60,7 +60,7 @@ func (login *qrLoginStruct) qrShowUrl() (url string) {
 }
 
 // 获取扫码图片信息
-func (login *qrLoginStruct) GetQr() (data getQrStruct, err error) {
+func (login *QrLoginStruct) GetQr() (data GetQrStruct, err error) {
 	var (
 		req       *http.Request
 		resp      *http.Response
@@ -95,7 +95,7 @@ func (login *qrLoginStruct) GetQr() (data getQrStruct, err error) {
 }
 
 // 检测登录状态
-func (login *qrLoginStruct) Check(qrsig string) (data loginStatusStruct, err error) {
+func (login *QrLoginStruct) Check(qrsig string) (data LoginStatusStruct, err error) {
 	var (
 		ptqrtoken = fmt.Sprintf("%d", login.ptqrtoken(qrsig))
 		action    = fmt.Sprintf("%d", time.Now().UnixMilli())
@@ -178,7 +178,7 @@ func (login *qrLoginStruct) Check(qrsig string) (data loginStatusStruct, err err
 }
 
 // ptqrtoken 计算
-func (login *qrLoginStruct) ptqrtoken(qrsig string) int {
+func (login *QrLoginStruct) ptqrtoken(qrsig string) int {
 	len := len(qrsig)
 	hash := 0
 	for i := 0; i < len; i++ {
